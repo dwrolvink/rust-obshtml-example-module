@@ -1,9 +1,11 @@
 //#[macro_use(out)]
 extern crate obshtml;
 extern crate yaml_rust;
+extern crate json;
 
 use yaml_rust::{YamlLoader, YamlEmitter};
 use yaml_rust::Yaml;
+use json::object;
 
 use obshtml::{ObsidianModuleConfig, ObsidianModule};
 use obshtml::module::options::{compile_default_options}; //get_configured_options
@@ -49,15 +51,30 @@ fn run(obsmod: ObsidianModule) {
     let val = &obsmod.options["b"].as_str().unwrap();
     eprintln!("Debug: {}< {:?} >", get_type_of(val), val, );
 
+    // write a random modfile
+    let mod_file1 = obsmod.modfile("test.json");
+
+    let data = object!{
+        foo: false,
+        bar: null,
+        answer: 42,
+        list: [null, "world", true]
+    };   
+
+    mod_file1.write(&data.pretty(2)).unwrap();
+
+    // get path of modfile
+    eprintln!("Debug: abs path of modfile: {}", &mod_file1.get_abs_file_path());
+
     // read a random modfile
-    let mod_file = obsmod.modfile("paths.json");
-    eprintln!("{}", mod_file.read().unwrap());
+    let mod_file2 = obsmod.modfile("test.json");
+    eprintln!("Debug: test.json contents:\n{}", mod_file2.read().unwrap());
+
 
     // return output
     // make sure to only output valid json to stdout when running as an actual module
     let output = r#"{"result": true}"#;
     println!("{}", output);
-
 }
 
 fn accept(obsmod: ObsidianModule) {

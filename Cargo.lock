@@ -27,6 +27,7 @@ dependencies = [
 name = "obshtml-example"
 version = "0.1.0"
 dependencies = [
+ "json",
  "obshtml",
  "yaml-rust",
 ]
