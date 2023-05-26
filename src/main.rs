@@ -9,6 +9,7 @@ use json::object;
 
 use obshtml::{ObsidianModuleConfig, ObsidianModule};
 use obshtml::module::options::{compile_default_options}; //get_configured_options
+use obshtml::module::modfile::{compile_provides};
 use obshtml::cli::execute;
 
 use obshtml::stdlib::*;
@@ -24,6 +25,8 @@ b: old (should be overwritten)
 c: old (only in default)
         ");
 
+    let provides = compile_provides(vec!("test.json"));
+
     // define module config
     let obs_cfg = ObsidianModuleConfig {
         module_name: "hello",
@@ -32,6 +35,7 @@ c: old (only in default)
         run_fn: run,
         accept_fn: accept,
         default_options: default_options,
+        provides: provides,
     };
 
     execute::start(obs_cfg);
@@ -70,7 +74,7 @@ fn run(obsmod: ObsidianModule) {
     let mod_file2 = obsmod.modfile("test.json");
     eprintln!("Debug: test.json contents:\n{}", mod_file2.read().unwrap());
 
-
+    
     // return output
     // make sure to only output valid json to stdout when running as an actual module
     let output = r#"{"result": true}"#;
