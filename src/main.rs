@@ -3,8 +3,8 @@ extern crate obshtml;
 extern crate yaml_rust;
 extern crate json;
 
-use yaml_rust::{YamlLoader, YamlEmitter};
-use yaml_rust::Yaml;
+// use yaml_rust::{YamlLoader, YamlEmitter};
+// use yaml_rust::Yaml;
 use json::object;
 
 use obshtml::{ObsidianModuleConfig, ObsidianModule};
@@ -77,7 +77,8 @@ fn run(obsmod: ObsidianModule) {
     println!("{}", output);
 }
 
-fn accept(obsmod: ObsidianModule) {
+
+fn accept(_obsmod: ObsidianModule) {
     //println!("inside accept_fn:\n\tmodule_data_folder: {}", module_data_folder);
     let output = r#"{"result": true}"#;
     println!("{}", output);
