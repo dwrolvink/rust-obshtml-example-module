@@ -52,13 +52,13 @@ fn run(obsmod: ObsidianModule) {
     // it also shows the returned values and how to unpack them
     // *note also the eprintln, we should only print valid json to stdout!*
     let val = &obsmod.options["a"];
-    eprintln!("Debug: {}< {:?} >", get_type_of(val), val, );
+    obsmod.stderr("debug", &format!("{}< {:?} >", get_type_of(val), val, ));
 
     let val = &obsmod.options["b"];
-    eprintln!("Debug: {}< {:?} >", get_type_of(val), val, );
+    obsmod.stderr("debug", &format!("{}< {:?} >", get_type_of(val), val, ));
 
     let val = &obsmod.options["b"].as_str().unwrap();
-    eprintln!("Debug: {}< {:?} >", get_type_of(val), val, );
+    obsmod.stderr("debug", &format!("{}< {:?} >", get_type_of(val), val, ));
 
     // write a random modfile
     let mod_file1 = obsmod.modfile("test.json");

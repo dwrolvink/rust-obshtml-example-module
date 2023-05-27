@@ -4,8 +4,9 @@ extern crate yaml_rust;
 extern crate json;
 
 // use yaml_rust::{YamlLoader, YamlEmitter};
-// use yaml_rust::Yaml;
-use json::object;
+use yaml_rust::Yaml;
+//use json::object;
+use json::iterators::Members;
 
 use obshtml::{ObsidianModuleConfig, ObsidianModule};
 use obshtml::module::options::{compile_default_options}; //get_configured_options
@@ -13,6 +14,9 @@ use obshtml::module::modfile::{compile_provides};
 use obshtml::cli::execute;
 
 use obshtml::stdlib::*;
+
+mod frontmatter;
+use frontmatter::parse_frontmatter;
 
 fn main() {
     // define the default config options for this module that can be overwritten
@@ -42,6 +46,30 @@ c: old (only in default)
 }
 
 fn run(obsmod: ObsidianModule) {
+
+    // read index/files.json and read the file paths in the list
+    let mod_file = obsmod.modfile("index/files.json");
+    obsmod.stderr("debug", &format!("abs path of modfile: {}", &mod_file.get_abs_file_path()));
+
+    let contents = mod_file.read().unwrap();
+    let file_list = json::parse(&contents).unwrap();
+    for item in file_list.members() {
+        let file_path = item.as_str().unwrap();
+
+        // get the frontmatter from markdown files
+        if file_path.ends_with(".md") {
+            obsmod.stderr("debug", &format!("getting frontmatter for: {}", file_path));
+
+            let frontmatter = parse_frontmatter(&obsmod, file_path);
+            match frontmatter {
+                Yaml::Null => (),
+                _ => {
+                    obsmod.stderr("debug", &format!("    {:?}", frontmatter));
+                },
+            }
+        }
+    }
+
     // // write a random modfile
     // let mod_file1 = obsmod.modfile("test.json");
 
@@ -54,12 +82,14 @@ fn run(obsmod: ObsidianModule) {
 
     // mod_file1.write(&data.pretty(2)).unwrap();
 
-    // read a random modfile
-    let mod_file = obsmod.modfile("index/files.json");
-    obsmod.stderr("debug", &format!("abs path of modfile: {}", &mod_file.get_abs_file_path()));
-    obsmod.stderr("debug", &format!("test.json contents:\n{}", mod_file.read().unwrap()));
+    
+    // obsmod.stderr("debug", &format!("{}< {:?} >", get_type_of(&it), it));
+    //println!("{:?}", file_paths);
+    
 
-    println!("{:?}", obsmod.verbosity);
+
+
+
 
     // return output
     // make sure to only output valid json to stdout when running as an actual module
