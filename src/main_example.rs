@@ -1,3 +1,8 @@
+/*
+    This is a simple example.
+    Rename main.rs to main_bak.rs (or remove), and rename this file to main.rs to run the example.
+*/
+
 //#[macro_use(out)]
 extern crate obshtml;
 extern crate yaml_rust;
@@ -42,25 +47,39 @@ c: old (only in default)
 }
 
 fn run(obsmod: ObsidianModule) {
-    // // write a random modfile
-    // let mod_file1 = obsmod.modfile("test.json");
 
-    // let data = object!{
-    //     foo: false,
-    //     bar: null,
-    //     answer: 42,
-    //     list: [null, "world", true]
-    // };   
+    // example of how to get the module options
+    // it also shows the returned values and how to unpack them
+    // *note also the eprintln, we should only print valid json to stdout!*
+    let val = &obsmod.options["a"];
+    eprintln!("Debug: {}< {:?} >", get_type_of(val), val, );
 
-    // mod_file1.write(&data.pretty(2)).unwrap();
+    let val = &obsmod.options["b"];
+    eprintln!("Debug: {}< {:?} >", get_type_of(val), val, );
+
+    let val = &obsmod.options["b"].as_str().unwrap();
+    eprintln!("Debug: {}< {:?} >", get_type_of(val), val, );
+
+    // write a random modfile
+    let mod_file1 = obsmod.modfile("test.json");
+
+    let data = object!{
+        foo: false,
+        bar: null,
+        answer: 42,
+        list: [null, "world", true]
+    };   
+
+    mod_file1.write(&data.pretty(2)).unwrap();
+
+    // get path of modfile
+    eprintln!("Debug: abs path of modfile: {}", &mod_file1.get_abs_file_path());
 
     // read a random modfile
-    let mod_file = obsmod.modfile("index/files.json");
-    obsmod.stderr("debug", &format!("abs path of modfile: {}", &mod_file.get_abs_file_path()));
-    obsmod.stderr("debug", &format!("test.json contents:\n{}", mod_file.read().unwrap()));
+    let mod_file2 = obsmod.modfile("test.json");
+    eprintln!("Debug: test.json contents:\n{}", mod_file2.read().unwrap());
 
-    println!("{:?}", obsmod.verbosity);
-
+    
     // return output
     // make sure to only output valid json to stdout when running as an actual module
     let output = r#"{"result": true}"#;
