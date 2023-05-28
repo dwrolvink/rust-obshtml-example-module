@@ -21,9 +21,7 @@ use obshtml::stdlib::*;
 use obshtml::lib::file;
 
 mod metadata;
-use metadata::parse_frontmatter;
-use metadata::get_inline_tags;
-// use metadata::sanatize_frontmatter;
+use metadata::{parse_frontmatter, ensure_tags_item_in_frontmatter, convert_tags_from_string_to_list, get_inline_tags};
 
 fn main() {
     // define the default config options for this module that can be overwritten
@@ -65,16 +63,13 @@ fn run(obsmod: ObsidianModule) {
 
         // get the frontmatter from markdown files
         if file_path.ends_with(".md") {
-            // obsmod.stderr("debug", &format!("getting frontmatter for: {}", file_path));
+            obsmod.stderr("debug", &format!("getting frontmatter for: {}", file_path));
 
-            let frontmatter = parse_frontmatter(&obsmod, file_path);
-            match frontmatter {
-                Yaml::Null => (),
-                _ => {
-                    // obsmod.stderr("debug", &format!("    {:?}", frontmatter));
-                    ()
-                },
-            }
+            let mut frontmatter = parse_frontmatter(&obsmod, file_path);
+            ensure_tags_item_in_frontmatter(&mut frontmatter);
+            convert_tags_from_string_to_list(&mut frontmatter);
+
+            obsmod.stderr("debug", &format!("    {:?}", frontmatter));
 
             let contents = file::read(file_path).unwrap();
             let inline_tags = get_inline_tags(&contents);

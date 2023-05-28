@@ -8,6 +8,7 @@ use yaml_rust::YamlLoader;
 use yaml_rust::Yaml;
 use yaml_rust::yaml::Hash;
 
+use obshtml::stdlib::*;
 use obshtml::{ObsidianModule};
 
 
@@ -94,6 +95,74 @@ pub fn parse_frontmatter(obsmod: &ObsidianModule, file_path: &str) -> Yaml {
     }
 }
 
+pub fn ensure_tags_item_in_frontmatter(mut metadata: &mut Yaml) {
+    /* 
+        If no frontmatter is present, just set it to `tags: []`
+        This function ensures that the ITEM "tags" is present.
+        In obsidian, you can set tags: "somestring values", this string is converted to a list 
+        in convert_tags_from_string_to_list(), not here.
+    */
+    if *metadata == Yaml::Null {
+        let empty_tags_doc = YamlLoader::load_from_str("tags: []").unwrap();
+        *metadata = empty_tags_doc[0].clone();
+        return;
+    }
+
+    // if frontmatter is present, check that `tags: [x]` is set, if not, add it
+    if variant_eq(&metadata["tags"], &Yaml::BadValue) {
+        let empty_list = Yaml::Array([].to_vec());
+        insert_yaml_list_into_yaml_hash(&mut metadata, "tags", empty_list);
+    }
+}
+
+pub fn insert_yaml_list_into_yaml_hash(mut yaml_hash: &mut Yaml, key: &str, list: Yaml) {
+    // unpack the inner hash value from the yaml
+    match &mut yaml_hash {
+        Yaml::Hash(inner) => {
+            // add the empty empty list at the provided key 
+            inner.insert(Yaml::String(key.to_string()), list);
+        },
+        _ => {
+            panic!("Expected Yaml::Hash, got something else");
+        },
+    }
+}
+
+pub fn convert_tags_from_string_to_list(mut metadata: &mut Yaml) {
+    /* 
+        In obsidian, you can set tags: "somestring values", this string is converted to a list here.
+        First run ensure_tags_item_in_frontmatter to ensure that Yaml is not Yaml::Null!
+    */
+    if variant_eq(&metadata["tags"], &Yaml::String("".to_string())) {
+
+        // unpack inner value
+        match &metadata["tags"] {
+            Yaml::String(inner) => {
+                if inner.trim().len() == 0 {
+                    // tags: "" || tags: "  " -> tags: []
+                    let empty_list = Yaml::Array([].to_vec());
+                    insert_yaml_list_into_yaml_hash(&mut metadata, "tags", empty_list);
+                }
+                else {
+                    // replace , with " " and then split on spaces, removing empty items
+                    // replace string value with new list
+                    let mut tags_vec = [].to_vec();
+
+                    let tags_str = inner.replace(",", " ");
+                    for part in tags_str.split(" ") {
+                        if part.trim().len() > 0 {
+                            tags_vec.push(Yaml::String(part.to_string()));
+                        }
+                    }
+
+                    insert_yaml_list_into_yaml_hash(&mut metadata, "tags", Yaml::Array(tags_vec));                 
+                }
+            },
+            _ => (),
+        }
+    }
+}
+
 pub fn get_inline_tags(contents: &str) -> Vec<String> {
     lazy_static! {
         static ref RE: Regex = Regex::new(r"(\s|^)#[\w/\-]*[a-zA-Z\-_/][\w/\-]*").unwrap();
@@ -109,29 +178,5 @@ pub fn get_inline_tags(contents: &str) -> Vec<String> {
     return tags;
 }
 
-// def get_inline_tags(self, page):
-//     return [x[1:].replace(".", "") for x in re.findall(r"(?<!\S)#[\w/\-]*[a-zA-Z\-_/][\w/\-]*", page)]
-
-// def sanatize_frontmatter(self, metadata):
-//     # imitate obsidian shenannigans
-//     if "tags" in metadata.keys():
-//         tags = metadata["tags"]
-//         if isinstance(tags, str):
-//             if " " in tags.strip() or "," in tags:
-//                 metadata["tags"] = [x.rstrip(",") for x in tags.replace(",", " ").split(" ") if x != ""]
-//             elif tags.strip() == "":
-//                 metadata["tags"] = []
-//             else:
-//                 metadata["tags"] = [tags,]
-//         elif tags is None:
-//             metadata["tags"] = []
-//     else:
-//         metadata["tags"] = []
-//     return metadata
-
-// def get_frontmatter(self, file_path):
-//     with open(file_path, encoding="utf-8") as f:
-//         metadata, page = frontmatter.parse(f.read())
-//     return self.sanatize_frontmatter(metadata), page
 
 
