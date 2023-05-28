@@ -2,6 +2,10 @@
 extern crate obshtml;
 extern crate yaml_rust;
 extern crate json;
+extern crate regex;
+
+#[macro_use]
+extern crate lazy_static;
 
 // use yaml_rust::{YamlLoader, YamlEmitter};
 use yaml_rust::Yaml;
@@ -14,9 +18,12 @@ use obshtml::module::modfile::{compile_provides};
 use obshtml::cli::execute;
 
 use obshtml::stdlib::*;
+use obshtml::lib::file;
 
-mod frontmatter;
-use frontmatter::parse_frontmatter;
+mod metadata;
+use metadata::parse_frontmatter;
+use metadata::get_inline_tags;
+// use metadata::sanatize_frontmatter;
 
 fn main() {
     // define the default config options for this module that can be overwritten
@@ -58,17 +65,26 @@ fn run(obsmod: ObsidianModule) {
 
         // get the frontmatter from markdown files
         if file_path.ends_with(".md") {
-            obsmod.stderr("debug", &format!("getting frontmatter for: {}", file_path));
+            // obsmod.stderr("debug", &format!("getting frontmatter for: {}", file_path));
 
             let frontmatter = parse_frontmatter(&obsmod, file_path);
             match frontmatter {
                 Yaml::Null => (),
                 _ => {
-                    obsmod.stderr("debug", &format!("    {:?}", frontmatter));
+                    // obsmod.stderr("debug", &format!("    {:?}", frontmatter));
+                    ()
                 },
             }
+
+            let contents = file::read(file_path).unwrap();
+            let inline_tags = get_inline_tags(&contents);
+            // if inline_tags.len() > 0 {
+            //     obsmod.stderr("debug", &format!("    inline tags: {:?}", inline_tags));
+            // }
         }
     }
+
+
 
     // // write a random modfile
     // let mod_file1 = obsmod.modfile("test.json");

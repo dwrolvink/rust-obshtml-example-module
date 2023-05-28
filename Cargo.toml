@@ -8,6 +8,8 @@ edition = "2021"
 [dependencies]
 json = "*"
 yaml-rust = "0.4"
+regex = "1"
+lazy_static = "1.4.0"
 
 [dependencies.obshtml]
 path = "../obshtml"
