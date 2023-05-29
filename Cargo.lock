@@ -40,6 +40,8 @@ name = "obshtml"
 version = "0.1.4"
 dependencies = [
  "json",
+ "lazy_static",
+ "regex",
  "thiserror",
  "yaml-rust",
 ]

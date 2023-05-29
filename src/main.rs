@@ -23,6 +23,7 @@ use obshtml::cli::execute;
 use obshtml::stdlib::*;
 use obshtml::lib::file;
 use obshtml::lib::misc::{yaml_to_json};
+use obshtml::markdown::misc::strip_code_sections;
 use std::path::{Path};
 
 // internal modules
@@ -94,16 +95,19 @@ fn run(obsmod: ObsidianModule) {
     for item in file_list.members() {
         let file_path = item.as_str().unwrap();
 
-        // get the frontmatter from markdown files
+        // get the frontmatter and inline tags from markdown files
         if file_path.ends_with(".md") {
             obsmod.stderr("debug", &format!("getting metadata for: {}", file_path));
 
+            // get frontmatter and ensure consistent structure
             let mut frontmatter = parse_frontmatter(&obsmod, file_path);
             ensure_tags_item_in_frontmatter(&mut frontmatter);
             convert_tags_from_string_to_list(&mut frontmatter);
 
+            // get the inline tags
             let contents = file::read(file_path).unwrap();
-            let inline_tags = get_inline_tags(&contents);
+            let contents_wo_code_sections = strip_code_sections(&contents);
+            let inline_tags = get_inline_tags(&contents_wo_code_sections);
 
             // add inline_tags to the frontmatter tags list
             match &frontmatter["tags"] {
