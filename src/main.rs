@@ -48,7 +48,7 @@ b: old (should be overwritten)
 c: old (only in default)
         ");
 
-    let provides = compile_provides(vec!("test.json"));
+    let provides = compile_provides(vec!("metadata.json"));
 
     // define module config
     let obs_cfg = ObsidianModuleConfig {
@@ -134,23 +134,10 @@ fn run(obsmod: ObsidianModule) {
     // emitter.dump(&Yaml::Hash(output_hash)).unwrap(); 
 
 
-    println!("{:#}", output_hash);
+    // write a output modfile
+    let out_mod_file = obsmod.modfile("metadata.json");
+    out_mod_file.write(&output_hash.pretty(2)).unwrap();
 
-
-
-    // // write a random modfile
-    // let mod_file1 = obsmod.modfile("test.json");
-
-    // let data = object!{
-    //     foo: false,
-    //     bar: null,
-    //     answer: 42,
-    //     list: [null, "world", true]
-    // };   
-
-    // mod_file1.write(&data.pretty(2)).unwrap();
-
-    
     // obsmod.stderr("debug", &format!("{}< {:?} >", get_type_of(&it), it));
     //println!("{:?}", file_paths);
     
