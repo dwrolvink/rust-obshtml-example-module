@@ -7,21 +7,35 @@ extern crate regex;
 #[macro_use]
 extern crate lazy_static;
 
-// use yaml_rust::{YamlLoader, YamlEmitter};
+extern crate linked_hash_map;
+
+use std::path::{Path};
+
+use json::JsonValue;
+
+//use yaml_rust::{YamlEmitter}; //YamlLoader
 use yaml_rust::Yaml;
-//use json::object;
 use json::iterators::Members;
+use linked_hash_map::LinkedHashMap;
 
 use obshtml::{ObsidianModuleConfig, ObsidianModule};
 use obshtml::module::options::{compile_default_options}; //get_configured_options
 use obshtml::module::modfile::{compile_provides};
 use obshtml::cli::execute;
 
+
 use obshtml::stdlib::*;
 use obshtml::lib::file;
+use obshtml::lib::misc::{yaml_to_json};
 
 mod metadata;
-use metadata::{parse_frontmatter, ensure_tags_item_in_frontmatter, convert_tags_from_string_to_list, get_inline_tags};
+use metadata::{
+    parse_frontmatter, 
+    ensure_tags_item_in_frontmatter, 
+    convert_tags_from_string_to_list, 
+    get_inline_tags,
+    insert_yaml_list_into_yaml_hash
+};
 
 fn main() {
     // define the default config options for this module that can be overwritten
@@ -51,6 +65,16 @@ c: old (only in default)
 }
 
 fn run(obsmod: ObsidianModule) {
+    // get files.json (we need the input folder later on)
+    let paths_modfile = obsmod.modfile("paths.json");
+    let contents = paths_modfile.read().unwrap();
+    let paths = json::parse(&contents).unwrap();
+    let input_folder_path = paths["input_folder"].as_str().unwrap();
+    println!("{:?}", input_folder_path);
+
+    // we will add all the metadata into this hashtable
+    // using the rel_path as the key, and the metadata as the value
+    let mut output_hash = json::JsonValue::new_object();
 
     // read index/files.json and read the file paths in the list
     let mod_file = obsmod.modfile("index/files.json");
@@ -73,11 +97,44 @@ fn run(obsmod: ObsidianModule) {
 
             let contents = file::read(file_path).unwrap();
             let inline_tags = get_inline_tags(&contents);
-            // if inline_tags.len() > 0 {
-            //     obsmod.stderr("debug", &format!("    inline tags: {:?}", inline_tags));
-            // }
+
+            // add inline_tags to the frontmatter tags list
+            match &frontmatter["tags"] {
+                Yaml::Array(inner) => {
+                    let mut inner_cp = inner.clone();
+                    for item in inline_tags {
+                        inner_cp.push(Yaml::String(item.to_owned()));
+                    }
+                    inner_cp.sort();
+                    inner_cp.dedup();
+                    insert_yaml_list_into_yaml_hash(&mut frontmatter, "tags", Yaml::Array(inner_cp));
+                },
+                _ => (),
+            }
+
+            // get rel_path
+            let abs_path = Path::new(file_path);
+            let rel_path_res = abs_path.strip_prefix(input_folder_path);
+            match rel_path_res {
+                Err(inner) => {
+                        obsmod.stderr("error", &format!("Failed to get relative path for rel({}, {}), first is not the parent of the second", input_folder_path, file_path));
+                    },
+                Ok(rel_path) => {
+                    // write to output hash
+                    let rel_path_str = rel_path.to_str().unwrap().to_owned();
+                    output_hash[rel_path_str] = yaml_to_json(&frontmatter).unwrap();
+                },
+            }
         }
     }
+
+    // println!("{:?}", output_hash);
+    // let mut out_yaml_str = String::new();
+    // let mut emitter = YamlEmitter::new(&mut out_yaml_str);
+    // emitter.dump(&Yaml::Hash(output_hash)).unwrap(); 
+
+
+    println!("{:#}", output_hash);
 
 
 
@@ -97,11 +154,6 @@ fn run(obsmod: ObsidianModule) {
     // obsmod.stderr("debug", &format!("{}< {:?} >", get_type_of(&it), it));
     //println!("{:?}", file_paths);
     
-
-
-
-
-
     // return output
     // make sure to only output valid json to stdout when running as an actual module
     let output = r#"{"result": true}"#;

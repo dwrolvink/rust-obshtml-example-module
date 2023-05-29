@@ -50,6 +50,7 @@ version = "0.1.0"
 dependencies = [
  "json",
  "lazy_static",
+ "linked-hash-map",
  "obshtml",
  "regex",
  "yaml-rust",

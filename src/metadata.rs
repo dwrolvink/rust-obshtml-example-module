@@ -164,6 +164,9 @@ pub fn convert_tags_from_string_to_list(mut metadata: &mut Yaml) {
 }
 
 pub fn get_inline_tags(contents: &str) -> Vec<String> {
+    /*
+        TODO: FIRST strip codeblocks/lines!!
+    */
     lazy_static! {
         static ref RE: Regex = Regex::new(r"(\s|^)#[\w/\-]*[a-zA-Z\-_/][\w/\-]*").unwrap();
     }
